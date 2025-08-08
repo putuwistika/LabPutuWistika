@@ -1,10 +1,24 @@
 .kawitan-sqlflow {
-  --sqlflow-bg: #fff;
-  --sqlflow-fg: #222;
-  --sqlflow-node-bg: #fff;
-  --sqlflow-node-border: #888;
-  --sqlflow-edge: #555;
-  --sqlflow-edge-control: #ff7f0e;
+  --theme-light-bg: #f5f5f7;
+  --theme-light-fg: #1d1d1f;
+  --theme-light-node-bg: #ffffff;
+  --theme-light-node-border: #d2d2d7;
+  --theme-light-edge: #6e6e73;
+  --theme-light-edge-control: #007aff;
+
+  --theme-dark-bg: #1c1c1e;
+  --theme-dark-fg: #f5f5f7;
+  --theme-dark-node-bg: #2c2c2e;
+  --theme-dark-node-border: #3a3a3c;
+  --theme-dark-edge: #8e8e93;
+  --theme-dark-edge-control: #0a84ff;
+
+  --sqlflow-bg: var(--theme-light-bg);
+  --sqlflow-fg: var(--theme-light-fg);
+  --sqlflow-node-bg: var(--theme-light-node-bg);
+  --sqlflow-node-border: var(--theme-light-node-border);
+  --sqlflow-edge: var(--theme-light-edge);
+  --sqlflow-edge-control: var(--theme-light-edge-control);
   position: relative;
   width: 100%;
   height: 100%;
@@ -14,11 +28,12 @@
 }
 
 .kawitan-sqlflow--dark {
-  --sqlflow-bg: #1e1e1e;
-  --sqlflow-fg: #eee;
-  --sqlflow-node-bg: #2b2b2b;
-  --sqlflow-node-border: #666;
-  --sqlflow-edge: #bbb;
+  --sqlflow-bg: var(--theme-dark-bg);
+  --sqlflow-fg: var(--theme-dark-fg);
+  --sqlflow-node-bg: var(--theme-dark-node-bg);
+  --sqlflow-node-border: var(--theme-dark-node-border);
+  --sqlflow-edge: var(--theme-dark-edge);
+  --sqlflow-edge-control: var(--theme-dark-edge-control);
 }
 
 .kawitan-sqlflow svg {
@@ -45,6 +60,11 @@
   stroke-width: 1.5;
 }
 
+.kawitan-sqlflow .edge--lineage path {
+  stroke-width: 1;
+  stroke-dasharray: 4 2;
+}
+
 .kawitan-sqlflow .edge .control {
   fill: var(--sqlflow-edge-control);
   cursor: pointer;
@@ -60,4 +80,20 @@
 
 .kawitan-sqlflow .zoom-controls button {
   margin: 2px 0;
+}
+
+.kawitan-sqlflow .minimap {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 150px;
+  height: 100px;
+  border: 1px solid var(--sqlflow-node-border);
+  background: var(--sqlflow-bg);
+}
+
+.kawitan-sqlflow .minimap-viewport {
+  fill: none;
+  stroke: var(--sqlflow-edge);
+  stroke-width: 0.5;
 }
