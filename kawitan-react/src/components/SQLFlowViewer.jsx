@@ -44,7 +44,7 @@ const SQLFlowViewer = forwardRef(
       })
     }, [theme, options.minimap, options.zoomControls, onNodeClick, onEdgeClick])
 
-    // re-render when data or mode changes
+    // re-render when data, mode or options change
     useEffect(() => {
       if (!data) return
       if (mode === 'lineage') {
@@ -54,7 +54,7 @@ const SQLFlowViewer = forwardRef(
         const graph = data?.data?.graph ?? data.graph ?? data
         renderER(graph)
       }
-    }, [data, mode])
+    }, [data, mode, options.minimap, options.zoomControls])
 
     // expose imperative handlers
     useImperativeHandle(ref, () => ({
