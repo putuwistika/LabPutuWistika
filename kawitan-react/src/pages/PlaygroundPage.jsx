@@ -12,7 +12,7 @@ export default function PlaygroundPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
-  const [mode] = useState('er')
+  const [mode, setMode] = useState('er')
   const [query, setQuery] = useState('')
   const [selectedNode, setSelectedNode] = useState(null)
   const [showMinimap, setShowMinimap] = useState(true)
@@ -78,6 +78,8 @@ export default function PlaygroundPage() {
         onQueryChange={setQuery}
         showMinimap={showMinimap}
         onToggleMinimap={() => setShowMinimap((v) => !v)}
+        mode={mode}
+        onModeChange={setMode}
       />
       {!loading && !error && hasSummary && (
         <div className="px-4 py-2 text-sm flex space-x-4 border-b">
