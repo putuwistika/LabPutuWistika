@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KAWITAN - Every Data Has a Story. Explore your data lineage with elegant visualizations.">
+    <meta name="author" content="Putu Wistika">
+    
+    <title>KAWITAN v1.0 - Data Lineage Explorer</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    
+    <!-- External Dependencies (DO NOT MODIFY) -->
+    <script src="jquery.min.js"></script>
+    <script src="sqlflow.widget.3.5.19.js"></script>
+    <link href="sqlflow.widget.3.5.19.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- KAWITAN Custom Styles -->
+    <link href="assets/css/kawitan.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Animated Background Elements -->
+    <div class="background-animation">
+        <div class="gradient-sphere sphere-1"></div>
+        <div class="gradient-sphere sphere-2"></div>
+        <div class="gradient-sphere sphere-3"></div>
+        <div class="floating-particles"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-glow"></div>
+        <div class="header-container">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <div class="logo-wrapper">
+                    <img src="assets/images/logo.png" alt="KAWITAN" class="logo-img">
+                    <div class="logo-pulse"></div>
+                </div>
+                <div class="logo-text">
+                    <h1 class="logo-title">KAWITAN</h1>
+                    <p class="logo-tagline">
+                        <span class="tagline-text">Every Data Has a Story</span>
+                        <span class="version-badge">v1.0</span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Controls Section -->
+            <div class="controls">
+                <!-- Search Combobox -->
+                <div class="search-combobox">
+                    <input type="text" 
+                           id="dataSourceSearch" 
+                           class="search-input" 
+                           placeholder="Search data sources..."
+                           autocomplete="off">
+                    <i class="fas fa-search search-icon"></i>
+                    <div class="search-dropdown" id="searchDropdown">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                
+                <button class="icon-btn" id="scanBtn" title="Scan Data Sources">
+                    <i class="fas fa-radar"></i>
+                    <span class="btn-text">Scan</span>
+                    <div class="btn-ripple"></div>
+                </button>
+                
+                <button class="icon-btn primary" id="refreshBtn" title="Refresh Visualization">
+                    <i class="fas fa-sync-alt"></i>
+                    <span class="btn-text">Refresh</span>
+                    <div class="btn-ripple"></div>
+                </button>
+
+                <button class="icon-btn accent" id="fullscreenBtn" title="Fullscreen Mode">
+                    <i class="fas fa-expand"></i>
+                    <span class="btn-text">Expand</span>
+                    <div class="btn-ripple"></div>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Animated Header Line -->
+        <div class="header-line">
+            <div class="line-animation"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Active Data Source Indicator -->
+        <div class="active-source-indicator" id="activeSourceIndicator">
+            <div class="source-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <div class="source-info">
+                <span class="source-label">Active Data Source:</span>
+                <span class="source-name" id="activeSourceName">No source selected</span>
+            </div>
+            <div class="source-pulse"></div>
+        </div>
+
+        <!-- Visualization Container -->
+        <div class="visualization-wrapper">
+            <div class="sqlflow-container">
+                <!-- Loading Overlay -->
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-content">
+                        <div class="dna-loader">
+                            <div class="dna-strand"></div>
+                            <div class="dna-strand"></div>
+                        </div>
+                        <p class="loading-text">
+                            <span class="loading-title">Initializing KAWITAN</span>
+                            <span class="loading-subtitle" id="loadingMessage">Preparing your data story...</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-content">
+                        <div class="welcome-logo">
+                            <img src="assets/images/logo.png" alt="KAWITAN">
+                        </div>
+                        <h2 class="welcome-title">Welcome to KAWITAN</h2>
+                        <p class="welcome-subtitle">Every Data Has a Story</p>
+                        
+                        <!-- Welcome Actions Container -->
+                        <div class="welcome-actions" id="welcomeActions">
+                            <!-- Initial Button -->
+                            <button class="welcome-btn" id="startExploringBtn" onclick="showWelcomeSearch()">
+                                <span>Start Exploring</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                            
+                            <!-- Search Combobox (Hidden Initially) -->
+                            <div class="welcome-search-container" id="welcomeSearchContainer" style="display: none;">
+                                <div class="welcome-search-box">
+                                    <input type="text" 
+                                           id="welcomeDataSourceSearch" 
+                                           class="welcome-search-input" 
+                                           placeholder="Type to search data sources..."
+                                           autocomplete="off">
+                                    <i class="fas fa-search welcome-search-icon"></i>
+                                    <div class="welcome-search-dropdown" id="welcomeSearchDropdown">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                                <p class="welcome-search-hint">
+                                    <i class="fas fa-info-circle"></i>
+                                    Select a data source to begin visualization
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SQLFlow Visualization -->
+                <div id="sqlflow"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification Container -->
+    <div class="notification-container">
+        <div id="notification" class="notification">
+            <div class="notification-icon-wrapper">
+                <i class="notification-icon fas fa-check-circle"></i>
+                <div class="notification-pulse"></div>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title"></div>
+                <div class="notification-message"></div>
+            </div>
+            <button class="notification-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <span class="footer-text">
+                        Made with <i class="fas fa-heart heart-icon"></i> by 
+                        <a href="#" class="footer-link">Putu Wistika</a>
+                    </span>
+                </div>
+                <div class="footer-center">
+                    <span class="footer-brand">KAWITAN</span>
+                    <span class="footer-divider">·</span>
+                    <span class="footer-tagline">Every Data Has a Story</span>
+                </div>
+                <div class="footer-right">
+                    <span class="footer-version">Version 1.0</span>
+                    <span class="footer-divider">·</span>
+                    <a href="#" class="footer-link">Documentation</a>
+                </div>
+            </div>
+            <div class="footer-wave">
+                <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" 
+                          fill="url(#waveGradient)" opacity="0.5"></path>
+                    <defs>
+                        <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#0071E3;stop-opacity:0.3" />
+                            <stop offset="100%" style="stop-color:#D5E8F7;stop-opacity:0.3" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Context Menu (Optional) -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-item" onclick="exportData()">
+            <i class="fas fa-download"></i>
+            <span>Export Data</span>
+        </div>
+        <div class="context-item" onclick="shareView()">
+            <i class="fas fa-share-alt"></i>
+            <span>Share View</span>
+        </div>
+        <div class="context-item" onclick="resetView()">
+            <i class="fas fa-undo"></i>
+            <span>Reset View</span>
+        </div>
+    </div>
+
+    <!-- KAWITAN Core Scripts -->
+    <script src="assets/js/kawitan-animations.js"></script>
+    
+    <!-- Main Application Script -->
+    <script>
+        // Global Variables
+        let sqlflow;
+        let currentJsonData = null;
+        let notificationTimeout;
+        let isFullscreen = false;
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 KAWITAN v1.0 - Initializing...');
+            
+            try {
+                // Start animations
+                initializeAnimations();
+                
+                // Initialize SQLFlow
+                await initializeSQLFlow();
+                
+                // Load data
+                await scanJsonFolder();
+                await loadDefaultData();
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                // Update time
+                updateCurrentTime();
+                setInterval(updateCurrentTime, 60000);
+                
+                console.log('✅ KAWITAN initialized successfully');
+            } catch (error) {
+                console.error('❌ Initialization error:', error);
+                showNotification('error', 'Initialization Error', 'Failed to start KAWITAN');
+            }
+        });
+
+        // Initialize SQLFlow Widget
+        async function initializeSQLFlow() {
+            sqlflow = await SQLFlow.init({
+                container: document.getElementById('sqlflow'),
+                width: '100%',
+                height: '100%',
+                apiPrefix: '',
+                component: {
+                    sqlEditor: false,
+                    graphLocate: true,
+                    minimap: true,
+                },
+            });
+        }
+
+        // The rest of the JavaScript functions are in kawitan-animations.js
+    </script>
+</body>
+</html>
