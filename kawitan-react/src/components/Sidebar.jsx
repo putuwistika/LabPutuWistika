@@ -9,10 +9,10 @@ export default function Sidebar() {
       className="w-64 h-full bg-softGray p-4 space-y-2"
     >
       <nav className="flex flex-col space-y-2">
-        <Link to="/" className="hover:text-accentBlue">
+        <Link to="/welcome" className="hover:text-accentBlue">
           Home
         </Link>
-        <Link to="/play" className="hover:text-accentBlue">
+        <Link to="/vis-playground" className="hover:text-accentBlue">
           Playground
         </Link>
       </nav>
