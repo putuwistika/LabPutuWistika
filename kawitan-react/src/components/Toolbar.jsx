@@ -8,6 +8,8 @@ export default function Toolbar({
   onReportChange,
   query,
   onQueryChange,
+  showMinimap,
+  onToggleMinimap,
 }) {
   const { theme, toggleTheme } = useTheme()
   const inputClasses =
@@ -46,6 +48,9 @@ export default function Toolbar({
         </button>
         <button onClick={resetZoom} className={buttonClasses}>
           Reset
+        </button>
+        <button onClick={onToggleMinimap} className={buttonClasses}>
+          {showMinimap ? 'Hide map' : 'Show map'}
         </button>
         <button onClick={toggleTheme} className={buttonClasses}>
           {theme === 'dark' ? '🌙' : '☀️'}
