@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import Sidebar from './components/Sidebar'
@@ -14,8 +14,9 @@ export default function App() {
           <Header />
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<WelcomePage />} />
-              <Route path="/play" element={<PlaygroundPage />} />
+              <Route path="/" element={<Navigate to="/welcome" replace />} />
+              <Route path="/welcome" element={<WelcomePage />} />
+              <Route path="/vis-playground" element={<PlaygroundPage />} />
             </Routes>
           </main>
           <Footer />

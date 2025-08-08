@@ -1,0 +1,5 @@
+kawitan-react/node_modules/
+**/node_modules/
+**/dist/
+package-lock.json
+**/package-lock.json
