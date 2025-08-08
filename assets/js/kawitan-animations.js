@@ -1,5 +1,5 @@
 /**
- * KAWITAN v1.0 - Animation & Core Functions
+* KAWITAN v2.0 - Animation & Core Functions
  * Author: Putu Wistika
  * Description: Every Data Has a Story
  */
@@ -1194,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add loaded class to body for animations
     document.body.classList.add('loaded');
     
-    console.log('✨ KAWITAN v1.0 - Ready');
+    console.log('✨ KAWITAN v2.0 - Ready');
     console.log('📝 Made with ❤️ by Putu Wistika');
     console.log('🌟 Every Data Has a Story');
 });
