@@ -27,6 +27,13 @@ export interface SQLFlowGraph {
   };
 }
 
+export interface SQLFlowLineage {
+  elements: {
+    tables: SQLFlowTable[];
+    edges: SQLFlowEdge[];
+  };
+}
+
 export interface SQLFlowSummary {
   schema: number;
   process: number;
@@ -43,7 +50,12 @@ export interface SQLFlowReport {
   data: {
     mode: string;
     graph: SQLFlowGraph;
+    sqlflow?: SQLFlowLineage;
     summary: SQLFlowSummary;
   };
   sessionId: string;
+}
+
+export interface SQLFlowIndex {
+  files: string[];
 }

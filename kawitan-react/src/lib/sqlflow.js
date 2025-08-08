@@ -7,12 +7,19 @@
  */
 
 const state = {
-  container: /** @type {HTMLElement|null} */(null),
-  options: { minimap: false, zoomControls: false, theme: 'light' },
-  svg: /** @type {SVGSVGElement|null} */(null),
-  viewport: /** @type {SVGGElement|null} */(null),
-  columns: /** @type {Record<string,{x:number,y:number}>} */({}),
-  edges: /** @type {Array<{id:string,control?:{x:number,y:number}}>} */([]),
+  container: /** @type {HTMLElement|null} */ (null),
+  options: {
+    minimap: true,
+    zoomControls: false,
+    theme: 'light',
+    onNodeClick: /** @type {((n:SQLFlowTable)=>void)|undefined} */ (undefined),
+    onEdgeClick: /** @type {((e:SQLFlowEdge)=>void)|undefined} */ (undefined)
+  },
+  svg: /** @type {SVGSVGElement|null} */ (null),
+  viewport: /** @type {SVGGElement|null} */ (null),
+  minimap: /** @type {{svg:SVGSVGElement,content:SVGGElement,rect:SVGRectElement}|null} */ (null),
+  columns: /** @type {Record<string, { x: number; y: number }>} */ ({}),
+  edges: /** @type {Array<{ id: string; control?: { x: number; y: number } }>} */ ([]),
   transform: { x: 0, y: 0, k: 1 }
 };
 
@@ -26,10 +33,26 @@ export function init(container, options = {}) {
   container.innerHTML = '';
   state.svg = createSVG('svg');
   state.viewport = createSVG('g');
+  const defs = createSVG('defs');
+  const marker = createSVG('marker');
+  marker.setAttribute('id', 'edge-arrow');
+  marker.setAttribute('viewBox', '0 -5 10 10');
+  marker.setAttribute('refX', '10');
+  marker.setAttribute('refY', '0');
+  marker.setAttribute('markerWidth', '6');
+  marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('orient', 'auto');
+  const arrow = createSVG('path');
+  arrow.setAttribute('d', 'M0,-5 L10,0 L0,5');
+  arrow.setAttribute('fill', 'var(--sqlflow-edge)');
+  marker.appendChild(arrow);
+  defs.appendChild(marker);
+  state.svg.appendChild(defs);
   state.svg.appendChild(state.viewport);
   container.appendChild(state.svg);
 
   setupPanZoom();
+  if (state.options.minimap) setupMinimap();
   if (state.options.zoomControls) createZoomControls();
 }
 
@@ -45,8 +68,26 @@ export function renderER(graphJson) {
 
   layoutTables(tables);
   renderTables(tables);
-  renderEdges(edges);
+  renderEdges(edges, false);
   applyTransform();
+  updateMinimap();
+}
+
+/** Render a lineage graph. */
+export function renderLineage(graphJson) {
+  if (!state.viewport) return;
+  state.viewport.innerHTML = '';
+  state.columns = {};
+  state.edges = [];
+
+  const tables = (graphJson.elements && graphJson.elements.tables) || [];
+  const edges = (graphJson.elements && graphJson.elements.edges) || [];
+
+  layoutTables(tables);
+  renderTables(tables);
+  renderEdges(edges, true);
+  applyTransform();
+  updateMinimap();
 }
 
 export function zoomIn() {
@@ -63,7 +104,7 @@ export function resetView() {
 }
 
 // Helpers -------------------------------------------------------
-function renderTables(/** @type {SQLFlowTable[]} */tables) {
+function renderTables(/** @type {SQLFlowTable[]} */ tables) {
   if (!state.viewport) return;
   const headerHeight = 20;
   const rowHeight = 18;
@@ -75,6 +116,9 @@ function renderTables(/** @type {SQLFlowTable[]} */tables) {
     const g = createSVG('g');
     g.setAttribute('class', 'table');
     g.setAttribute('transform', `translate(${t.x},${t.y})`);
+    g.addEventListener('click', () => {
+      if (state.options.onNodeClick) state.options.onNodeClick(t);
+    });
 
     const rect = createSVG('rect');
     rect.setAttribute('width', String(width));
@@ -103,7 +147,7 @@ function renderTables(/** @type {SQLFlowTable[]} */tables) {
   });
 }
 
-function renderEdges(/** @type {SQLFlowEdge[]} */edges) {
+function renderEdges(/** @type {SQLFlowEdge[]} */ edges, lineage) {
   if (!state.viewport) return;
 
   edges.forEach((e) => {
@@ -113,10 +157,11 @@ function renderEdges(/** @type {SQLFlowEdge[]} */edges) {
 
     const edge = { id: e.id, control: e.control || { x: (s.x + t.x) / 2, y: (s.y + t.y) / 2 } };
     const g = createSVG('g');
-    g.setAttribute('class', 'edge');
+    g.setAttribute('class', lineage ? 'edge edge--lineage' : 'edge');
 
     const path = createSVG('path');
     path.setAttribute('d', edgePath(s, t, edge.control));
+    if (lineage) path.setAttribute('marker-end', 'url(#edge-arrow)');
     g.appendChild(path);
 
     if (e.label) {
@@ -132,8 +177,13 @@ function renderEdges(/** @type {SQLFlowEdge[]} */edges) {
     ctrl.setAttribute('r', '4');
     ctrl.setAttribute('cx', String(edge.control.x));
     ctrl.setAttribute('cy', String(edge.control.y));
+    ctrl.addEventListener('click', (ev) => ev.stopPropagation());
     makeDraggable(ctrl, edge, path, s, t);
     g.appendChild(ctrl);
+
+    g.addEventListener('click', () => {
+      if (state.options.onEdgeClick) state.options.onEdgeClick(e);
+    });
 
     state.viewport.appendChild(g);
     state.edges.push(edge);
@@ -249,4 +299,55 @@ function applyTransform() {
   if (!state.viewport) return;
   const { x, y, k } = state.transform;
   state.viewport.setAttribute('transform', `translate(${x},${y}) scale(${k})`);
+  updateMinimapViewport();
+}
+
+function setupMinimap() {
+  if (!state.container) return;
+  const mini = createSVG('svg');
+  mini.classList.add('minimap');
+  const content = createSVG('g');
+  const rect = createSVG('rect');
+  rect.setAttribute('class', 'minimap-viewport');
+  mini.appendChild(content);
+  mini.appendChild(rect);
+  state.container.appendChild(mini);
+  state.minimap = { svg: mini, content, rect };
+
+  mini.addEventListener('click', (e) => {
+    const pt = toMinimapPoint(e);
+    if (!state.container) return;
+    state.transform.x = -pt.x * state.transform.k + state.container.clientWidth / 2;
+    state.transform.y = -pt.y * state.transform.k + state.container.clientHeight / 2;
+    applyTransform();
+  });
+}
+
+function updateMinimap() {
+  if (!state.minimap || !state.viewport) return;
+  state.minimap.content.innerHTML = state.viewport.innerHTML;
+  const bbox = state.viewport.getBBox();
+  state.minimap.svg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+  updateMinimapViewport();
+}
+
+function updateMinimapViewport() {
+  if (!state.minimap || !state.viewport || !state.container) return;
+  const { k, x, y } = state.transform;
+  const w = state.container.clientWidth / k;
+  const h = state.container.clientHeight / k;
+  const vx = -x / k;
+  const vy = -y / k;
+  state.minimap.rect.setAttribute('x', String(vx));
+  state.minimap.rect.setAttribute('y', String(vy));
+  state.minimap.rect.setAttribute('width', String(w));
+  state.minimap.rect.setAttribute('height', String(h));
+}
+
+function toMinimapPoint(evt) {
+  if (!state.minimap) throw new Error('minimap missing');
+  const pt = state.minimap.svg.createSVGPoint();
+  pt.x = evt.clientX;
+  pt.y = evt.clientY;
+  return pt.matrixTransform(state.minimap.svg.getScreenCTM().inverse());
 }
