@@ -11,6 +11,8 @@ export interface SQLFlowTable {
   id: string;
   label: SQLFlowLabel;
   columns?: SQLFlowColumn[];
+  x?: number;
+  y?: number;
 }
 
 export interface SQLFlowEdge {
@@ -18,6 +20,7 @@ export interface SQLFlowEdge {
   sourceId: string;
   targetId: string;
   label?: string;
+  control?: { x: number; y: number };
 }
 
 export interface SQLFlowGraph {
