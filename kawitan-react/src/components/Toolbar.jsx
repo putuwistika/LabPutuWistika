@@ -10,6 +10,8 @@ export default function Toolbar({
   onQueryChange,
   showMinimap,
   onToggleMinimap,
+  mode = 'er',
+  onModeChange,
 }) {
   const { theme, toggleTheme } = useTheme()
   const inputClasses =
@@ -27,6 +29,8 @@ export default function Toolbar({
       ? 'px-3 py-1 rounded-md border border-mediumGray bg-white hover:bg-softGray transition'
       : 'px-3 py-1 rounded-md border border-softGray bg-primaryDark hover:bg-textPrimary hover:text-primaryDark transition'
 
+  const activeButton = `${buttonClasses} bg-accentBlue text-white`
+
   return (
     <div className={`h-16 flex items-center justify-between px-4 border-b ${containerClasses}`}>
       <div className="flex items-center space-x-2">
@@ -40,6 +44,19 @@ export default function Toolbar({
         />
       </div>
       <div className="flex items-center space-x-2">
+        <span>Mode:</span>
+        <button
+          onClick={() => onModeChange && onModeChange('er')}
+          className={mode === 'er' ? activeButton : buttonClasses}
+        >
+          ER
+        </button>
+        <button
+          onClick={() => onModeChange && onModeChange('lineage')}
+          className={mode === 'lineage' ? activeButton : buttonClasses}
+        >
+          Lineage
+        </button>
         <button onClick={zoomOut} className={buttonClasses}>
           -
         </button>
