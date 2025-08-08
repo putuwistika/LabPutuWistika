@@ -62,18 +62,65 @@ const SQLFlowViewer = forwardRef(
       zoomOut: () => libZoomOut(),
       resetView: () => libResetView(),
       highlight: (query) => {
-        const q = (query || '').toLowerCase()
         if (!containerRef.current) return
-        const tables = containerRef.current.querySelectorAll('.table')
-        tables.forEach((el) => {
-          const text = el.textContent?.toLowerCase() || ''
-          el.style.opacity = q && !text.includes(q) ? '0.2' : '1'
+        const q = (query || '').trim().toLowerCase()
+        const nodes = Array.from(
+          containerRef.current.querySelectorAll('.table')
+        )
+        const edges = Array.from(
+          containerRef.current.querySelectorAll('.edge')
+        )
+
+        if (!q) {
+          nodes.forEach((n) => (n.style.opacity = '1'))
+          edges.forEach((e) => (e.style.opacity = '1'))
+          return
+        }
+
+        /** @type {{x:number,y:number,width:number,height:number}[]} */
+        const boxes = []
+        nodes.forEach((el) => {
+          const label =
+            el.querySelector('text')?.textContent?.toLowerCase() || ''
+          const match = label.includes(q)
+          el.style.opacity = match ? '1' : '0.2'
+          if (match) {
+            const transform = el.getAttribute('transform') || ''
+            const m = transform.match(/translate\(([-\d.]+),([-\d.]+)\)/)
+            const x = m ? parseFloat(m[1]) : 0
+            const y = m ? parseFloat(m[2]) : 0
+            const rect = el.querySelector('rect')
+            const width = rect ? parseFloat(rect.getAttribute('width') || '0') : 0
+            const height = rect ? parseFloat(rect.getAttribute('height') || '0') : 0
+            boxes.push({ x, y, width, height })
+          }
         })
-        const edges = containerRef.current.querySelectorAll('.edge')
+
         edges.forEach((el) => {
-          const text = el.textContent?.toLowerCase() || ''
-          el.style.opacity = q && !text.includes(q) ? '0.1' : '1'
+          const path = el.querySelector('path')
+          let connected = false
+          if (path) {
+            const d = path.getAttribute('d') || ''
+            const m = d.match(
+              /M([-\d.]+),([-\d.]+) Q([-\d.]+),([-\d.]+) ([-\d.]+),([-\d.]+)/,
+            )
+            if (m) {
+              const sx = parseFloat(m[1])
+              const sy = parseFloat(m[2])
+              const ex = parseFloat(m[5])
+              const ey = parseFloat(m[6])
+              connected = boxes.some(
+                (b) =>
+                  pointInBox(sx, sy, b) || pointInBox(ex, ey, b),
+              )
+            }
+          }
+          el.style.opacity = connected ? '1' : '0.1'
         })
+
+        function pointInBox(x, y, b) {
+          return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height
+        }
       },
     }))
 

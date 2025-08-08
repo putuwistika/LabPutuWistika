@@ -6,7 +6,8 @@ export default function Toolbar({
   zoomOut,
   resetZoom,
   onReportChange,
-  onSearch,
+  query,
+  onQueryChange,
 }) {
   const { theme, toggleTheme } = useTheme()
   const inputClasses =
@@ -32,7 +33,8 @@ export default function Toolbar({
           type="text"
           placeholder="Search"
           className={inputClasses}
-          onChange={(e) => onSearch && onSearch(e.target.value)}
+          value={query}
+          onChange={(e) => onQueryChange && onQueryChange(e.target.value)}
         />
       </div>
       <div className="flex items-center space-x-2">

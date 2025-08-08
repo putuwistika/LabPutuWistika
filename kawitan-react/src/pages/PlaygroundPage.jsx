@@ -12,11 +12,18 @@ export default function PlaygroundPage() {
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [mode] = useState('er')
+  const [query, setQuery] = useState('')
 
   const zoomIn = () => viewerRef.current?.zoomIn()
   const zoomOut = () => viewerRef.current?.zoomOut()
   const resetZoom = () => viewerRef.current?.resetView()
-  const highlight = (q) => viewerRef.current?.highlight(q)
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      viewerRef.current?.highlight(query)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [query])
 
   const loadReport = () => {
     if (!selectedReport) return
@@ -56,7 +63,8 @@ export default function PlaygroundPage() {
         zoomOut={zoomOut}
         resetZoom={resetZoom}
         onReportChange={setSelectedReport}
-        onSearch={highlight}
+        query={query}
+        onQueryChange={setQuery}
       />
       {!loading && !error && hasSummary && (
         <div className="px-4 py-2 text-sm flex space-x-4 border-b">
