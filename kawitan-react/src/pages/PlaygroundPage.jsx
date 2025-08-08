@@ -1,14 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useTheme } from '../context/ThemeContext'
 import Toolbar from '../components/Toolbar'
-import Workspace from '../components/Workspace'
+import SQLFlowViewer from '../components/SQLFlowViewer'
 
 export default function PlaygroundPage() {
-  const [zoom, setZoom] = useState(100)
+  const viewerRef = useRef(null)
+  const { theme } = useTheme()
   const [report, setReport] = useState('')
+  const [data, setData] = useState(null)
 
-  const zoomIn = () => setZoom((z) => z + 10)
-  const zoomOut = () => setZoom((z) => Math.max(10, z - 10))
-  const resetZoom = () => setZoom(100)
+  const zoomIn = () => viewerRef.current?.zoomIn()
+  const zoomOut = () => viewerRef.current?.zoomOut()
+  const resetZoom = () => viewerRef.current?.resetView()
+  const highlight = (q) => viewerRef.current?.highlight(q)
+
+  useEffect(() => {
+    if (!report) return
+    fetch(`/json/${report}`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch((err) => console.error('Failed to load report', err))
+  }, [report])
 
   return (
     <div className="h-full flex flex-col">
@@ -17,8 +29,11 @@ export default function PlaygroundPage() {
         zoomOut={zoomOut}
         resetZoom={resetZoom}
         onReportChange={setReport}
+        onSearch={highlight}
       />
-      <Workspace zoom={zoom} />
+      <div className="flex-1">
+        <SQLFlowViewer ref={viewerRef} data={data} theme={theme} />
+      </div>
     </div>
   )
 }

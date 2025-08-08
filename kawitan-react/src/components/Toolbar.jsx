@@ -1,7 +1,13 @@
 import { useTheme } from '../context/ThemeContext'
 import ReportSelector from './ReportSelector'
 
-export default function Toolbar({ zoomIn, zoomOut, resetZoom, onReportChange }) {
+export default function Toolbar({
+  zoomIn,
+  zoomOut,
+  resetZoom,
+  onReportChange,
+  onSearch,
+}) {
   const { theme, toggleTheme } = useTheme()
   const inputClasses =
     theme === 'light'
@@ -22,7 +28,12 @@ export default function Toolbar({ zoomIn, zoomOut, resetZoom, onReportChange }) 
     <div className={`h-16 flex items-center justify-between px-4 border-b ${containerClasses}`}>
       <div className="flex items-center space-x-2">
         <ReportSelector className={inputClasses} onChange={onReportChange} />
-        <input type="text" placeholder="Search" className={inputClasses} />
+        <input
+          type="text"
+          placeholder="Search"
+          className={inputClasses}
+          onChange={(e) => onSearch && onSearch(e.target.value)}
+        />
       </div>
       <div className="flex items-center space-x-2">
         <button onClick={zoomOut} className={buttonClasses}>
