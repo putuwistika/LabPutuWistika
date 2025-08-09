@@ -3,6 +3,73 @@ import { useTheme } from '../context/ThemeContext'
 import SQLFlowViewer from '../components/SQLFlowViewer'
 import DetailsPanel from '../components/DetailsPanel'
 
+function buildTransformLookup(json) {
+  const lookup = { edges: {}, columns: {} }
+  const tables =
+    json?.data?.graph?.elements?.tables || json?.graph?.elements?.tables || []
+  tables.forEach((t) => {
+    const cols = t.columns || []
+    cols.forEach((c) => {
+      const tx = c.transform
+      if (tx) {
+        lookup.columns[c.id] = {
+          id: c.id,
+          tableId: t.id,
+          targetColumn:
+            (c.label && typeof c.label === 'object' ? c.label.content : c.label) ||
+            c.id,
+          expression:
+            (typeof tx === 'string' ? tx : tx.code || tx.expression || '') || '',
+          sources:
+            (c.sources || []).map((s) =>
+              [s.parentName || s.table, s.column].filter(Boolean).join('.'),
+            ),
+        }
+      }
+    })
+  })
+
+  const edges =
+    json?.data?.graph?.elements?.edges || json?.graph?.elements?.edges || []
+  edges.forEach((e) => {
+    const tx = e.meta?.transform || e.transform
+    if (tx) {
+      lookup.edges[e.id] = {
+        id: e.id,
+        expression:
+          (typeof tx === 'string' ? tx : tx.code || tx.expression || '') || '',
+      }
+    }
+  })
+
+  const top =
+    json?.data?.sqlflow?.transforms ||
+    json?.data?.graph?.transforms ||
+    json?.data?.transforms ||
+    json?.transforms
+  if (Array.isArray(top)) {
+    top.forEach((t) => {
+      if (!t) return
+      if (t.edgeId) {
+        lookup.edges[t.edgeId] = {
+          id: t.edgeId,
+          expression: t.expression || t.code || '',
+        }
+      } else if (t.targetColumnId) {
+        lookup.columns[t.targetColumnId] = {
+          id: t.targetColumnId,
+          tableId: t.targetTableId,
+          targetColumn: t.targetColumn,
+          expression: t.expression || t.code || '',
+          sources: t.sources || [],
+        }
+      }
+    })
+  }
+
+  return lookup
+}
+
 export default function PlaygroundPage() {
   const viewerRef = useRef(null)
   const { theme } = useTheme()
@@ -13,6 +80,7 @@ export default function PlaygroundPage() {
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [selectedNode, setSelectedNode] = useState(null)
+  const [transformLookup, setTransformLookup] = useState({ edges: {}, columns: {} })
 
   const loadReport = () => {
     if (!selectedReport) return
@@ -25,6 +93,7 @@ export default function PlaygroundPage() {
       })
       .then((json) => {
         setData(json)
+        setTransformLookup(buildTransformLookup(json))
         setLoading(false)
       })
       .catch((err) => {
@@ -37,6 +106,13 @@ export default function PlaygroundPage() {
   useEffect(() => {
     loadReport()
   }, [selectedReport])
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      viewerRef.current?.highlight(reportInput)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [reportInput])
 
   const graph = data?.data?.graph ?? data?.graph ?? data
   const nodes = graph?.elements?.tables || []
@@ -116,6 +192,7 @@ export default function PlaygroundPage() {
               theme={theme}
               options={{ minimap: true }}
               onNodeClick={setSelectedNode}
+              transformLookup={transformLookup}
             />
           )}
           <DetailsPanel

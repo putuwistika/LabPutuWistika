@@ -54,6 +54,17 @@
   pointer-events: none;
 }
 
+.kawitan-sqlflow .table text[data-column-id] {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.kawitan-sqlflow .transform-toggle {
+  cursor: pointer;
+  font-weight: bold;
+  pointer-events: auto;
+}
+
 .kawitan-sqlflow .edge path {
   fill: none;
   stroke: var(--sqlflow-edge);
@@ -68,6 +79,42 @@
 .kawitan-sqlflow .edge .control {
   fill: var(--sqlflow-edge-control);
   cursor: pointer;
+}
+
+.kawitan-sqlflow .transform-bar,
+.kawitan-sqlflow .transform-panel {
+  background: var(--sqlflow-node-bg);
+  color: var(--sqlflow-fg);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 8px;
+}
+
+.kawitan-sqlflow .transform-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  display: none;
+}
+
+.kawitan-sqlflow .transform-bar.show {
+  display: flex;
+}
+
+.kawitan-sqlflow .transform-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  display: none;
+}
+
+.kawitan-sqlflow .transform-panel.show {
+  display: block;
 }
 
 .kawitan-sqlflow .zoom-controls {
