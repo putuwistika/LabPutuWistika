@@ -9,13 +9,13 @@ import {
   setTransformLookup,
   getTransformLookup,
 } from '../lib/sqlflow'
+import '../styles/sqlflow.css'
 
 /**
  * React wrapper around the SQLFlow ESM engine.
  * @param {Object} props
  * @param {any} props.data - SQLFlow compatible JSON graph
  * @param {'er'|'lineage'} [props.mode='er']
- * @param {'light'|'dark'} [props.theme='light']
  * @param {{minimap?:boolean,zoomControls?:boolean}} [props.options]
  * @param {(node:any)=>void} [props.onNodeClick]
  * @param {(edge:any)=>void} [props.onEdgeClick]
@@ -25,7 +25,6 @@ const SQLFlowViewer = forwardRef(
     {
       data,
       mode = 'er',
-      theme = 'light',
       options = {},
       onNodeClick,
       onEdgeClick,
@@ -38,18 +37,18 @@ const SQLFlowViewer = forwardRef(
     const [bar, setBar] = useState(null)
     const [panelTable, setPanelTable] = useState(null)
 
-    // initialise on mount and when theme/options or callbacks change
+    // initialise on mount and when options or callbacks change
     useEffect(() => {
       if (!canvasRef.current) return
       init(canvasRef.current, {
-        theme,
+        theme: 'light',
         minimap: options.minimap !== false,
         zoomControls: options.zoomControls !== false,
         onNodeClick,
         onEdgeClick,
         onTransformToggle: (id) => setPanelTable(id),
       })
-    }, [theme, options.minimap, options.zoomControls, onNodeClick, onEdgeClick])
+    }, [options.minimap, options.zoomControls, onNodeClick, onEdgeClick])
 
     // re-render when data, mode or options change
     useEffect(() => {

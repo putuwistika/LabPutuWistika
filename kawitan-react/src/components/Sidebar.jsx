@@ -1,14 +1,8 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { useTheme } from '../context/ThemeContext'
 
 export default function Sidebar() {
-  const { theme } = useTheme()
-
-  const containerClasses =
-    theme === 'light'
-      ? 'bg-softGray border-mediumGray text-textPrimary'
-      : 'bg-primaryDark border-softGray text-softGray'
+  const containerClasses = 'bg-softGray border-mediumGray text-textPrimary'
 
   return (
     <div className="w-64 flex-shrink-0">

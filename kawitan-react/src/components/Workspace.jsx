@@ -1,12 +1,7 @@
 import { motion } from 'framer-motion'
-import { useTheme } from '../context/ThemeContext'
 
 export default function Workspace({ zoom }) {
-  const { theme } = useTheme()
-  const classes =
-    theme === 'light'
-      ? 'bg-white text-textPrimary'
-      : 'bg-primaryDark text-softGray'
+  const classes = 'bg-white text-textPrimary'
 
   return (
     <div className={`flex-1 flex items-center justify-center ${classes}`}>

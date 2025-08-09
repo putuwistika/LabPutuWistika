@@ -18,6 +18,8 @@ const state = {
   },
   svg: /** @type {SVGSVGElement|null} */ (null),
   viewport: /** @type {SVGGElement|null} */ (null),
+  edgeLayer: /** @type {SVGGElement|null} */ (null),
+  nodeLayer: /** @type {SVGGElement|null} */ (null),
   minimap: /** @type {{svg:SVGSVGElement,content:SVGGElement,rect:SVGRectElement}|null} */ (null),
   columns: /** @type {Record<string, { x: number; y: number }>} */ ({}),
   edges: /** @type {Array<{ id: string; control?: { x: number; y: number } }>} */ ([]),
@@ -30,11 +32,14 @@ export function init(container, options = {}) {
   state.container = container;
   state.options = { ...state.options, ...options };
   container.classList.add('kawitan-sqlflow');
-  container.classList.toggle('kawitan-sqlflow--dark', state.options.theme === 'dark');
 
   container.innerHTML = '';
   state.svg = createSVG('svg');
   state.viewport = createSVG('g');
+  state.edgeLayer = createSVG('g');
+  state.nodeLayer = createSVG('g');
+  state.viewport.appendChild(state.edgeLayer);
+  state.viewport.appendChild(state.nodeLayer);
   const defs = createSVG('defs');
   const marker = createSVG('marker');
   marker.setAttribute('id', 'edge-arrow');
@@ -60,8 +65,9 @@ export function init(container, options = {}) {
 
 /** Render an ER graph. */
 export function renderER(graphJson) {
-  if (!state.viewport) return;
-  state.viewport.innerHTML = '';
+  if (!state.nodeLayer || !state.edgeLayer) return;
+  state.nodeLayer.innerHTML = '';
+  state.edgeLayer.innerHTML = '';
   state.columns = {};
   state.edges = [];
 
@@ -77,8 +83,9 @@ export function renderER(graphJson) {
 
 /** Render a lineage graph. */
 export function renderLineage(graphJson) {
-  if (!state.viewport) return;
-  state.viewport.innerHTML = '';
+  if (!state.nodeLayer || !state.edgeLayer) return;
+  state.nodeLayer.innerHTML = '';
+  state.edgeLayer.innerHTML = '';
   state.columns = {};
   state.edges = [];
 
@@ -115,10 +122,10 @@ export function getTransformLookup() {
 
 // Helpers -------------------------------------------------------
 function renderTables(/** @type {SQLFlowTable[]} */ tables) {
-  if (!state.viewport) return;
-  const headerHeight = 20;
-  const rowHeight = 18;
-  const width = 180;
+  if (!state.nodeLayer) return;
+  const headerHeight = 26;
+  const rowHeight = 22;
+  const width = 200;
 
   tables.forEach((t) => {
     const cols = t.columns || [];
@@ -137,15 +144,18 @@ function renderTables(/** @type {SQLFlowTable[]} */ tables) {
     g.appendChild(rect);
 
     const title = createSVG('text');
-    title.setAttribute('x', '5');
-    title.setAttribute('y', '15');
-    title.textContent = t.label && typeof t.label === 'object' ? t.label.content : String(t.label);
+    title.setAttribute('x', '10');
+    title.setAttribute('y', '20');
+    const titleContent =
+      t.label && typeof t.label === 'object' ? t.label.content : String(t.label);
+    title.textContent = titleContent;
+    title.setAttribute('title', titleContent);
     g.appendChild(title);
 
     const toggle = createSVG('text');
     toggle.setAttribute('class', 'transform-toggle');
     toggle.setAttribute('x', String(width - 12));
-    toggle.setAttribute('y', '12');
+    toggle.setAttribute('y', '16');
     toggle.textContent = 'ƒ';
     toggle.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -154,24 +164,36 @@ function renderTables(/** @type {SQLFlowTable[]} */ tables) {
     g.appendChild(toggle);
 
     cols.forEach((c, idx) => {
-      const y = headerHeight + idx * rowHeight + rowHeight - 4;
+      const y = headerHeight + idx * rowHeight;
+      const row = createSVG('rect');
+      row.setAttribute('x', '0');
+      row.setAttribute('y', String(y));
+      row.setAttribute('width', String(width));
+      row.setAttribute('height', String(rowHeight));
+      row.setAttribute('class', 'column-row');
+      row.setAttribute('data-column-id', c.id);
+      g.appendChild(row);
+
       const text = createSVG('text');
       text.setAttribute('x', '10');
-      text.setAttribute('y', String(y));
+      text.setAttribute('y', String(y + rowHeight / 2 + 5));
       text.setAttribute('data-column-id', c.id);
-      text.textContent = c.label && typeof c.label === 'object' ? c.label.content : String(c.label);
+      const content =
+        c.label && typeof c.label === 'object' ? c.label.content : String(c.label);
+      text.textContent = content;
+      text.setAttribute('title', content);
+      text.setAttribute('dominant-baseline', 'middle');
       g.appendChild(text);
 
-      const cy = headerHeight + idx * rowHeight + rowHeight / 2;
-      state.columns[c.id] = { x: t.x + width / 2, y: t.y + cy };
+      state.columns[c.id] = { x: t.x + width / 2, y: t.y + y + rowHeight / 2 };
     });
 
-    state.viewport.appendChild(g);
+    state.nodeLayer.appendChild(g);
   });
 }
 
 function renderEdges(/** @type {SQLFlowEdge[]} */ edges, lineage) {
-  if (!state.viewport) return;
+  if (!state.edgeLayer) return;
 
   edges.forEach((e) => {
     const s = state.columns[e.sourceId];
@@ -209,15 +231,15 @@ function renderEdges(/** @type {SQLFlowEdge[]} */ edges, lineage) {
       if (state.options.onEdgeClick) state.options.onEdgeClick(e);
     });
 
-    state.viewport.appendChild(g);
+    state.edgeLayer.appendChild(g);
     state.edges.push(edge);
   });
 }
 
 function layoutTables(/** @type {SQLFlowTable[]} */tables) {
   const cols = Math.ceil(Math.sqrt(tables.length || 1));
-  const spacingX = 220;
-  const spacingY = 180;
+  const spacingX = 240;
+  const spacingY = 200;
   tables.forEach((t, i) => {
     if (typeof t.x !== 'number') t.x = (i % cols) * spacingX;
     if (typeof t.y !== 'number') t.y = Math.floor(i / cols) * spacingY;
