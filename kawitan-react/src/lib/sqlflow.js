@@ -13,13 +13,15 @@ const state = {
     zoomControls: false,
     theme: 'light',
     onNodeClick: /** @type {((n:SQLFlowTable)=>void)|undefined} */ (undefined),
-    onEdgeClick: /** @type {((e:SQLFlowEdge)=>void)|undefined} */ (undefined)
+    onEdgeClick: /** @type {((e:SQLFlowEdge)=>void)|undefined} */ (undefined),
+    onTransformToggle: /** @type {(id:string)=>void}|undefined */ (undefined)
   },
   svg: /** @type {SVGSVGElement|null} */ (null),
   viewport: /** @type {SVGGElement|null} */ (null),
   minimap: /** @type {{svg:SVGSVGElement,content:SVGGElement,rect:SVGRectElement}|null} */ (null),
   columns: /** @type {Record<string, { x: number; y: number }>} */ ({}),
   edges: /** @type {Array<{ id: string; control?: { x: number; y: number } }>} */ ([]),
+  transformLookup: /** @type {{edges:Record<string,any>;columns:Record<string,any>}} */ ({ edges: {}, columns: {} }),
   transform: { x: 0, y: 0, k: 1 }
 };
 
@@ -103,6 +105,14 @@ export function resetView() {
   applyTransform();
 }
 
+export function setTransformLookup(lookup) {
+  state.transformLookup = lookup || { edges: {}, columns: {} };
+}
+
+export function getTransformLookup() {
+  return state.transformLookup;
+}
+
 // Helpers -------------------------------------------------------
 function renderTables(/** @type {SQLFlowTable[]} */ tables) {
   if (!state.viewport) return;
@@ -115,6 +125,7 @@ function renderTables(/** @type {SQLFlowTable[]} */ tables) {
     const height = headerHeight + cols.length * rowHeight;
     const g = createSVG('g');
     g.setAttribute('class', 'table');
+    g.setAttribute('data-table-id', t.id);
     g.setAttribute('transform', `translate(${t.x},${t.y})`);
     g.addEventListener('click', () => {
       if (state.options.onNodeClick) state.options.onNodeClick(t);
@@ -131,11 +142,23 @@ function renderTables(/** @type {SQLFlowTable[]} */ tables) {
     title.textContent = t.label && typeof t.label === 'object' ? t.label.content : String(t.label);
     g.appendChild(title);
 
+    const toggle = createSVG('text');
+    toggle.setAttribute('class', 'transform-toggle');
+    toggle.setAttribute('x', String(width - 12));
+    toggle.setAttribute('y', '12');
+    toggle.textContent = 'ƒ';
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (state.options.onTransformToggle) state.options.onTransformToggle(t.id);
+    });
+    g.appendChild(toggle);
+
     cols.forEach((c, idx) => {
       const y = headerHeight + idx * rowHeight + rowHeight - 4;
       const text = createSVG('text');
       text.setAttribute('x', '10');
       text.setAttribute('y', String(y));
+      text.setAttribute('data-column-id', c.id);
       text.textContent = c.label && typeof c.label === 'object' ? c.label.content : String(c.label);
       g.appendChild(text);
 
@@ -158,6 +181,7 @@ function renderEdges(/** @type {SQLFlowEdge[]} */ edges, lineage) {
     const edge = { id: e.id, control: e.control || { x: (s.x + t.x) / 2, y: (s.y + t.y) / 2 } };
     const g = createSVG('g');
     g.setAttribute('class', lineage ? 'edge edge--lineage' : 'edge');
+    g.setAttribute('data-edge-id', e.id);
 
     const path = createSVG('path');
     path.setAttribute('d', edgePath(s, t, edge.control));

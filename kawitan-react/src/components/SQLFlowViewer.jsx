@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import {
   init,
   renderER,
@@ -6,6 +6,8 @@ import {
   zoomIn as libZoomIn,
   zoomOut as libZoomOut,
   resetView as libResetView,
+  setTransformLookup,
+  getTransformLookup,
 } from '../lib/sqlflow'
 
 /**
@@ -27,20 +29,25 @@ const SQLFlowViewer = forwardRef(
       options = {},
       onNodeClick,
       onEdgeClick,
+      transformLookup,
     },
     ref,
   ) => {
     const containerRef = useRef(null)
+    const canvasRef = useRef(null)
+    const [bar, setBar] = useState(null)
+    const [panelTable, setPanelTable] = useState(null)
 
     // initialise on mount and when theme/options or callbacks change
     useEffect(() => {
-      if (!containerRef.current) return
-      init(containerRef.current, {
+      if (!canvasRef.current) return
+      init(canvasRef.current, {
         theme,
         minimap: options.minimap !== false,
         zoomControls: options.zoomControls !== false,
         onNodeClick,
         onEdgeClick,
+        onTransformToggle: (id) => setPanelTable(id),
       })
     }, [theme, options.minimap, options.zoomControls, onNodeClick, onEdgeClick])
 
@@ -56,24 +63,77 @@ const SQLFlowViewer = forwardRef(
       }
     }, [data, mode, options.minimap, options.zoomControls])
 
+    // set transform lookup
+    useEffect(() => {
+      setTransformLookup(transformLookup || { edges: {}, columns: {} })
+    }, [transformLookup])
+
+    // attach hover listeners for edges and columns
+    useEffect(() => {
+      if (!canvasRef.current) return
+      const root = canvasRef.current
+
+      const handleEdgeEnter = (e) => {
+        const id = e.currentTarget.getAttribute('data-edge-id')
+        showTransformFor(id)
+      }
+      const handleColEnter = (e) => {
+        const id = e.currentTarget.getAttribute('data-column-id')
+        showTransformFor(id)
+      }
+      const hide = () => setBar(null)
+
+      const edges = Array.from(root.querySelectorAll('.edge'))
+      const cols = Array.from(root.querySelectorAll('[data-column-id]'))
+
+      edges.forEach((el) => {
+        el.addEventListener('mouseenter', handleEdgeEnter)
+        el.addEventListener('mouseleave', hide)
+      })
+      cols.forEach((el) => {
+        el.addEventListener('mouseenter', handleColEnter)
+        el.addEventListener('mouseleave', hide)
+      })
+
+      return () => {
+        edges.forEach((el) => {
+          el.removeEventListener('mouseenter', handleEdgeEnter)
+          el.removeEventListener('mouseleave', hide)
+        })
+        cols.forEach((el) => {
+          el.removeEventListener('mouseenter', handleColEnter)
+          el.removeEventListener('mouseleave', hide)
+        })
+      }
+    }, [data, mode, transformLookup])
+
+    const showTransformFor = (id) => {
+      if (!id) return
+      const lookup = getTransformLookup()
+      const info = lookup.columns[id] || lookup.edges[id]
+      if (info) setBar({ id, ...info })
+    }
+
+    const copyExpression = () => {
+      if (bar?.expression) navigator.clipboard?.writeText(bar.expression)
+    }
+
     // expose imperative handlers
     useImperativeHandle(ref, () => ({
       zoomIn: () => libZoomIn(),
       zoomOut: () => libZoomOut(),
       resetView: () => libResetView(),
+      showTransformFor,
       highlight: (query) => {
-        if (!containerRef.current) return
+        if (!canvasRef.current) return
         const q = (query || '').trim().toLowerCase()
-        const nodes = Array.from(
-          containerRef.current.querySelectorAll('.table')
-        )
-        const edges = Array.from(
-          containerRef.current.querySelectorAll('.edge')
-        )
+        const nodes = Array.from(canvasRef.current.querySelectorAll('.table'))
+        const edges = Array.from(canvasRef.current.querySelectorAll('.edge'))
 
         if (!q) {
           nodes.forEach((n) => (n.style.opacity = '1'))
           edges.forEach((e) => (e.style.opacity = '1'))
+          setBar(null)
           return
         }
 
@@ -121,10 +181,66 @@ const SQLFlowViewer = forwardRef(
         function pointInBox(x, y, b) {
           return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height
         }
+        // show transform if column name matches
+        const lookup = getTransformLookup()
+        const match = Object.entries(lookup.columns).find(([, v]) =>
+          v.targetColumn?.toLowerCase().includes(q),
+        )
+        if (match) showTransformFor(match[0])
       },
     }))
 
-    return <div ref={containerRef} className="w-full h-full" />
+    const lookup = getTransformLookup()
+    const panelCols = panelTable
+      ? Object.values(lookup.columns).filter((c) => c.tableId === panelTable)
+      : []
+
+    return (
+      <div ref={containerRef} className="w-full h-full relative">
+        <div ref={canvasRef} className="w-full h-full" />
+        {bar && (
+          <div className="transform-bar show flex items-center gap-2 text-sm">
+            <span className="font-semibold">{bar.targetColumn || bar.target}</span>
+            <code className="flex-1 whitespace-pre overflow-x-auto text-xs">
+              {bar.expression}
+            </code>
+            <button
+              className="px-2 py-0.5 rounded bg-gray-200 hover:bg-gray-300"
+              onClick={copyExpression}
+            >
+              📋
+            </button>
+          </div>
+        )}
+        {panelTable && (
+          <div className="transform-panel show">
+            <button
+              className="absolute top-2 right-2 text-sm"
+              onClick={() => setPanelTable(null)}
+            >
+              ✕
+            </button>
+            <h3 className="font-semibold mb-2">Transforms</h3>
+            {panelCols.length === 0 && (
+              <div className="text-sm text-gray-500">No transform metadata</div>
+            )}
+            {panelCols.map((c) => (
+              <div key={c.id} className="mb-4">
+                <div className="font-medium">{c.targetColumn}</div>
+                <code className="block text-xs whitespace-pre overflow-x-auto bg-gray-100 rounded p-1">
+                  {c.expression}
+                </code>
+                {c.sources?.length ? (
+                  <div className="text-xs mt-1 text-gray-500">
+                    Sources: {c.sources.join(', ')}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
   },
 )
 
