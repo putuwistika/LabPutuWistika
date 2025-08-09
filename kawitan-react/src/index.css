@@ -3,13 +3,8 @@
 @tailwind utilities;
 
 @layer base {
-  body.theme-light {
-    @apply bg-softGray text-textPrimary;
-  }
-  body.theme-dark {
-    @apply bg-primaryDark text-softGray;
-  }
   body {
+    @apply bg-softGray text-textPrimary;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
   }
 }

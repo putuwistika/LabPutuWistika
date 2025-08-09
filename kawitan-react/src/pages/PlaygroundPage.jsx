@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useTheme } from '../context/ThemeContext'
 import SQLFlowViewer from '../components/SQLFlowViewer'
 import DetailsPanel from '../components/DetailsPanel'
 
@@ -72,7 +71,6 @@ function buildTransformLookup(json) {
 
 export default function PlaygroundPage() {
   const viewerRef = useRef(null)
-  const { theme } = useTheme()
 
   const [reportInput, setReportInput] = useState('')
   const [selectedReport, setSelectedReport] = useState('')
@@ -173,7 +171,7 @@ export default function PlaygroundPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+      <div className="flex-1 overflow-auto gradient-apple p-4">
         <div className="w-full h-full rounded-2xl shadow-lg bg-white flex overflow-hidden">
           {loading ? (
             <div className="w-full h-full animate-pulse bg-gray-200" />
@@ -189,7 +187,6 @@ export default function PlaygroundPage() {
               ref={viewerRef}
               data={data}
               mode="er"
-              theme={theme}
               options={{ minimap: true }}
               onNodeClick={setSelectedNode}
               transformLookup={transformLookup}

@@ -1,4 +1,3 @@
-import { useTheme } from '../context/ThemeContext'
 import ReportSelector from './ReportSelector'
 
 export default function Toolbar({
@@ -13,21 +12,14 @@ export default function Toolbar({
   mode = 'er',
   onModeChange,
 }) {
-  const { theme, toggleTheme } = useTheme()
   const inputClasses =
-    theme === 'light'
-      ? 'px-3 py-1 rounded-md border border-mediumGray bg-white focus:outline-none focus:ring-2 focus:ring-accentBlue'
-      : 'px-3 py-1 rounded-md border border-softGray bg-primaryDark text-softGray focus:outline-none focus:ring-2 focus:ring-accentBlue'
+    'px-3 py-1 rounded-md border border-mediumGray bg-white focus:outline-none focus:ring-2 focus:ring-accentBlue'
 
   const containerClasses =
-    theme === 'light'
-      ? 'bg-softGray border-mediumGray text-textPrimary'
-      : 'bg-primaryDark border-softGray text-softGray'
+    'bg-softGray border-mediumGray text-textPrimary'
 
   const buttonClasses =
-    theme === 'light'
-      ? 'px-3 py-1 rounded-md border border-mediumGray bg-white hover:bg-softGray transition'
-      : 'px-3 py-1 rounded-md border border-softGray bg-primaryDark hover:bg-textPrimary hover:text-primaryDark transition'
+    'px-3 py-1 rounded-md border border-mediumGray bg-white hover:bg-softGray transition'
 
   const activeButton = `${buttonClasses} bg-accentBlue text-white`
 
@@ -68,9 +60,6 @@ export default function Toolbar({
         </button>
         <button onClick={onToggleMinimap} className={buttonClasses}>
           {showMinimap ? 'Hide map' : 'Show map'}
-        </button>
-        <button onClick={toggleTheme} className={buttonClasses}>
-          {theme === 'dark' ? '🌙' : '☀️'}
         </button>
       </div>
     </div>
